@@ -7,8 +7,10 @@ const readline = require('readline').createInterface({
 const fs = require('fs');
 
 async function scoreHTML(str, key) {
-    const $ = await cheerio.load(str);
+    const $ = cheerio.load(str);
     let score = 0;
+
+    const title = $('title').text();
 
     $('title').each((i, elem) => {
         const text = $(elem).text().toLowerCase();
@@ -45,7 +47,7 @@ async function scoreHTML(str, key) {
         score += (text.match(new RegExp(key, "g")) || []).length * 1
     })
 
-    return score;
+    return [score, title];
 }
 
 async function getPage(url, isRobot, isLast) {
@@ -114,7 +116,11 @@ async function search(start, numPages) {
         const link = links.remove();
         if (!visitedParent.has(parent(link))) {
             const robotslink = robots(start);
-            const robotspage = await getPage(robotslink, true, false);
+            try {
+                const robotspage = await getPage(robotslink, true, false);
+            } catch (error) {
+
+            }
             const disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
             for (let i = 0; i < disallowed.length; i++) {
                 if (disallowed[i].charAt(0) === ":") {
@@ -136,15 +142,20 @@ async function search(start, numPages) {
         noVisit = links.addQueue(tempLinks, noVisit);
         console.log(link)
 
-        // await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1200));
     }
 
     return;
 }
 
-async function score(key) {
+async function score(s) {
     const data = JSON.parse(fs.readFileSync("crawled.json"));
-
+    let searched = [];
+    for (let i = 0; i < data.length; i++) {
+        const scoreReturn = await scoreHTML(data[i]["Contents"], s.toLowerCase());
+        searched.push({ URL: data[i]["URL"], Title: scoreReturn[1], Score: scoreReturn[0] })
+    }
+    console.log(searched);
 }
 
 class Queue {
@@ -198,11 +209,13 @@ class Queue {
 
 readline.question('Starting link: ', async link => {
     readline.question('Number of pages: ', async num => {
-        readline.question('Keyword: ', async key => {
-            fs.appendFileSync('crawled.json', '[');
-            console.log(link)
-            await search(link, num);
-            fs.appendFileSync('crawled.json', ']');
+        readline.question('Search term: ', async s => {
+            // fs.appendFileSync('crawled.json', '[');
+            // console.log(link)
+            // await search(link, num);
+            // fs.appendFileSync('crawled.json', ']');
+
+            score(s)
             readline.close();
         })
     })
