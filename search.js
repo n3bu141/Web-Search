@@ -116,10 +116,11 @@ async function search(start, numPages) {
         const link = links.remove();
         if (!visitedParent.has(parent(link))) {
             const robotslink = robots(start);
+            let robotspage;
             try {
-                const robotspage = await getPage(robotslink, true, false);
+                robotspage = await getPage(robotslink, true, false);
             } catch (error) {
-
+                continue;
             }
             const disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
             for (let i = 0; i < disallowed.length; i++) {
@@ -142,7 +143,7 @@ async function search(start, numPages) {
         noVisit = links.addQueue(tempLinks, noVisit);
         console.log(link)
 
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 800));
     }
 
     return;
@@ -155,7 +156,7 @@ async function score(s) {
         const scoreReturn = await scoreHTML(data[i]["Contents"], s.toLowerCase());
         searched.push({ URL: data[i]["URL"], Title: scoreReturn[1], Score: scoreReturn[0] })
     }
-    console.log(searched);
+    console.table(searched);
 }
 
 class Queue {
@@ -210,10 +211,10 @@ class Queue {
 readline.question('Starting link: ', async link => {
     readline.question('Number of pages: ', async num => {
         readline.question('Search term: ', async s => {
-            // fs.appendFileSync('crawled.json', '[');
+            // fs.appendFileSync('crawled.json', '[\n');
             // console.log(link)
             // await search(link, num);
-            // fs.appendFileSync('crawled.json', ']');
+            // fs.appendFileSync('crawled.json', '\n]');
 
             score(s)
             readline.close();
