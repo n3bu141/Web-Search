@@ -5,6 +5,46 @@ const readline = require('readline').createInterface({
     output: process.stdout,
 });
 const fs = require('fs');
+const express = require('express');
+const app = express();
+const port = 3001;
+
+function validateKey(req, res, next) {
+  const expectedKey = 'key';
+  const actualKey = req.query.key;
+  if (actualKey !== expectedKey) {
+    res.status(403).json({ error: 'invalid key' });
+  } else {
+    next();
+  }
+}
+
+app.get('/search', validateKey, (req, res) => {
+  const s = req.query.s;
+  const count = req.query.count;
+  let ret = `Search results for "${s}" (count: ${count})\n\n`;
+
+  const data = fs.readFileSync('crawled.json');
+  const entries = JSON.parse(data);
+
+  const scores = [];
+
+  entries.forEach(async entry => {
+    const scoreReturn = await scoreHTML(entry["Contents"], s.toLowerCase());
+    const score = scoreReturn[0];
+    const title = scoreReturn[1]
+    scores.push({ Title: title, URL: entry["URL"], Score: score });
+  });
+
+  scores.sort((a, b) => b.score - a.score);
+  const topURLs = scores.slice(0, count).map(entry => entry["URL"]);
+
+  res.send(topURLs);
+});
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
 
 async function scoreHTML(str, key) {
     const $ = cheerio.load(str);
@@ -143,20 +183,10 @@ async function search(start, numPages) {
         noVisit = links.addQueue(tempLinks, noVisit);
         console.log(link)
 
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 200));
     }
 
     return;
-}
-
-async function score(s) {
-    const data = JSON.parse(fs.readFileSync("crawled.json"));
-    let searched = [];
-    for (let i = 0; i < data.length; i++) {
-        const scoreReturn = await scoreHTML(data[i]["Contents"], s.toLowerCase());
-        searched.push({ URL: data[i]["URL"], Title: scoreReturn[1], Score: scoreReturn[0] })
-    }
-    console.table(searched);
 }
 
 class Queue {
@@ -208,16 +238,17 @@ class Queue {
     }
 }
 
-readline.question('Starting link: ', async link => {
-    readline.question('Number of pages: ', async num => {
-        readline.question('Search term: ', async s => {
-            // fs.appendFileSync('crawled.json', '[\n');
-            // console.log(link)
-            // await search(link, num);
-            // fs.appendFileSync('crawled.json', '\n]');
+// readline.question('Starting link: ', async link => {
+//     readline.question('Number of pages: ', async num => {
+//         readline.question('Search term: ', async s => {
+//             fs.appendFileSync('crawled.json', '[\n');
+//             console.log(link)
+//             await search(link, num);
+//             fs.appendFileSync('crawled.json', ',\n');
 
-            score(s)
-            readline.close();
-        })
-    })
-})
+//             // score(s)
+//             readline.close();
+//         })
+//     })
+// })
+
