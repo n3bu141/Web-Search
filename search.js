@@ -10,40 +10,50 @@ const app = express();
 const port = 3001;
 
 function validateKey(req, res, next) {
-  const expectedKey = 'key';
-  const actualKey = req.query.key;
-  if (actualKey !== expectedKey) {
-    res.status(403).json({ error: 'invalid key' });
-  } else {
-    next();
-  }
+    const expectedKey = 'key';
+    const actualKey = req.query.key;
+    if (actualKey !== expectedKey) {
+        res.status(403).json({ error: 'invalid key' });
+    } else {
+        next();
+    }
 }
 
 app.get('/search', validateKey, (req, res) => {
-  const s = req.query.s;
-  const count = req.query.count;
-  let ret = `Search results for "${s}" (count: ${count})\n\n`;
+    const s = req.query.s;
+    let count = req.query.count;
 
-  const data = fs.readFileSync('crawled.json');
-  const entries = JSON.parse(data);
+    if(count == null){
+        count = 10;
+    } 
 
-  const scores = [];
+    let ret = `Search results for "${s}" (count: ${count})\n\n`;
 
-  entries.forEach(async entry => {
-    const scoreReturn = await scoreHTML(entry["Contents"], s.toLowerCase());
-    const score = scoreReturn[0];
-    const title = scoreReturn[1]
-    scores.push({ Title: title, URL: entry["URL"], Score: score });
-  });
+    const data = fs.readFileSync('crawled.json');
+    const entries = JSON.parse(data);
 
-  scores.sort((a, b) => b.score - a.score);
-  const topURLs = scores.slice(0, count).map(entry => entry["URL"]);
+    const scores = [];
 
-  res.send(topURLs);
+    entries.forEach(async entry => {
+        const scoreReturn = await scoreHTML(entry["Contents"], s.toLowerCase());
+        const score = scoreReturn[0];
+        const title = scoreReturn[1]
+        scores.push({ Title: title, URL: entry["URL"], Score: score });
+    });
+
+    scores.sort((a, b) => b['Score'] - a['Score']);
+    const topURLs = scores.slice(0, count).map(entry => entry["URL"]);
+    console.log(scores)
+
+    res.send(topURLs);
 });
 
+app.get('/', (req, res) => {
+    res.send('Server listening at http://localhost:' + port)
+})
+
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+    console.log(`Server listening at http://localhost:${port}`);
 });
 
 async function scoreHTML(str, key) {
@@ -163,11 +173,13 @@ async function search(start, numPages) {
                 continue;
             }
             const disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
-            for (let i = 0; i < disallowed.length; i++) {
-                if (disallowed[i].charAt(0) === ":") {
-                    noVisit.add(parent(start) + disallowed[i].substring(3, disallowed[i].indexOf("\n")));
+            for (let j = 0; j < disallowed.length; j++) {
+                if (disallowed[j].charAt(0) === ":") {
+                    noVisit.add(parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
                 }
             }
+
+            visitedParent.add(parent(link))
         }
 
         noVisit.add(link)
@@ -182,8 +194,9 @@ async function search(start, numPages) {
         let tempLinks = await getLinks(data);
         noVisit = links.addQueue(tempLinks, noVisit);
         console.log(link)
+        console.log(links.length + ' ' + i)
 
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 400));
     }
 
     return;
@@ -244,9 +257,8 @@ class Queue {
 //             fs.appendFileSync('crawled.json', '[\n');
 //             console.log(link)
 //             await search(link, num);
-//             fs.appendFileSync('crawled.json', ',\n');
+//             fs.appendFileSync('crawled.json', '\n]');
 
-//             // score(s)
 //             readline.close();
 //         })
 //     })
