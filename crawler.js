@@ -59,48 +59,37 @@ async function search(start, numPages) {
     let data = await getPage(start, false, i == numPages);
     let links = await getLinks(data);
 
-    let noVisit = new Set([start])
+    let noVisit = new Set()
     let visitedParent = new Set()
-
-    visitedParent.add(await parent(start))
-
-    for (let j = links.frontIndex; j < links.backIndex; j++) {
-        noVisit.add(links.atIndex(j))
-    }
 
     while (links.length != 0 && i != numPages) {
         const link = links.remove();
-        if (!visitedParent.has(await parent(link))) {
-            const robotslink = await robots(start);
+        if (!visitedParent.has(parent(link))) {
+            const robotslink = robots(start);
             let robotspage;
-            try {
-                robotspage = await getPage(robotslink, true, false);
-            } catch (error) {
-                continue;
-            }
+            try { robotspage = await getPage(robotslink, true, false); } catch (error) { }
             const disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
             for (let j = 0; j < disallowed.length; j++) {
                 if (disallowed[j].charAt(0) === ":") {
-                    noVisit.add(await parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
+                    noVisit.add(parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
                 }
             }
 
-            visitedParent.add(await parent(link))
+            visitedParent.add(parent(link))
         }
 
-        noVisit.add(link)
-        i++;
-
         try {
-            data = await getPage(link, false, i == numPages);
+            if (!noVisit.has(link)) {
+                i++;
+                data = await getPage(link, false, i == numPages);
+                noVisit.add(link)
+            }
         } catch (e) {
             continue;
         }
 
         let tempLinks = await getLinks(data);
         noVisit = links.addQueue(tempLinks, noVisit);
-        console.log(link)
-        console.log(links.length + ' ' + i)
 
         await new Promise(r => setTimeout(r, 400));
     }
@@ -128,16 +117,16 @@ class Queue {
         return item
     }
 
-    addQueue(queue, visited) {
+    addQueue(queue, noVisit) {
         for (let i = queue.frontIndex; i < queue.backIndex; i++) {
             const temp = queue.remove()
 
-            if (!visited.has(temp) && temp !== undefined) {
+            if (!noVisit.has(temp) && temp !== undefined) {
                 this.add(temp);
             }
-            visited.add(temp);
+            noVisit.add(temp);
         }
-        return visited;
+        return noVisit;
     }
 
     peek() {

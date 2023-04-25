@@ -29,10 +29,13 @@ app.get('/search', validateKey, async (req, res) => {
     const scores = [];
 
     await entries.forEach(async entry => {
+        const start = Date.now();
         const scoreReturn = await scoreHTML(entry["Contents"], s.toLowerCase());
         const score = scoreReturn[0];
         const title = scoreReturn[1]
         scores.push({ Title: title, URL: entry["URL"], Score: score });
+        const end = Date.now();
+        console.log(`Execution time: ${end - start} ms`);
     });
 
     scores.sort((a, b) => b['Score'] - a['Score']);
