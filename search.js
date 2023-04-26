@@ -35,7 +35,6 @@ app.get('/search', validateKey, async (req, res) => {
         const title = scoreReturn[1]
         scores.push({ Title: title, URL: entry["URL"], Score: score });
         const end = Date.now();
-        console.log(`Execution time: ${end - start} ms`);
     });
 
     scores.sort((a, b) => b['Score'] - a['Score']);

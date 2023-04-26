@@ -6,11 +6,9 @@ const readline = require('readline').createInterface({
 });
 const fs = require('fs');
 
-async function getPage(url, isRobot, isLast) {
+async function getPage(url) {
     const { data } = await axios.get(url);
-    if (!isRobot) {
-        appendToFile(url, data, isLast)
-    }
+
     return data;
 }
 
@@ -41,7 +39,7 @@ function parent(url) {
     return 'https://' + arr[2] + '/';
 }
 
-async function getLinks(data) {
+async function getLinks(data, isRobot, isLast, url) {
     const $page = cheerio.load(data);
     const links = new Queue();
 
@@ -51,13 +49,23 @@ async function getLinks(data) {
         })
     }
 
+    if (!isRobot) {
+        appendToFile(url, data, isLast)
+    }
+
     return links;
 }
 
 async function search(start, numPages) {
     let i = 1;
-    let data = await getPage(start, false, i == numPages);
-    let links = await getLinks(data);
+    let data = await getPage(start);
+    let links = await getLinks(data, false, i == numPages, start);
+
+    // console.log(links)
+
+    if (links.length <= 1) {
+        return;
+    }
 
     let noVisit = new Set()
     let visitedParent = new Set()
@@ -68,16 +76,16 @@ async function search(start, numPages) {
             const robotslink = robots(start);
             let robotspage;
             let disallowed;
-            try { 
-                robotspage = await getPage(robotslink, true, false); 
-                disallowed = robotspage.split("User-agent: *")[1].split("Disallow"); 
+            try {
+                robotspage = await getPage(robotslink);
+                disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
 
                 for (let j = 0; j < disallowed.length; j++) {
                     if (disallowed[j].charAt(0) === ":") {
                         noVisit.add(parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
                     }
                 }
-            } catch (error) { 
+            } catch (error) {
 
             }
 
@@ -87,18 +95,19 @@ async function search(start, numPages) {
         try {
             if (!noVisit.has(link)) {
                 i++;
-                data = await getPage(link, false, i == numPages);
+                data = await getPage(link);
                 noVisit.add(link)
+
+                // console.log(noVisit)
+                // console.log(links)
+                // console.log(i)
+                let tempLinks = await getLinks(data, false, i == numPages || links.length == 0, link);
+                console.log(data)
+                links.addQueue(tempLinks, noVisit);
             }
         } catch (e) {
 
         }
-
-        console.log(noVisit)
-        console.log(links)
-        console.log(i)
-        let tempLinks = await getLinks(data);
-        links.addQueue(tempLinks, noVisit);
 
         await new Promise(r => setTimeout(r, 2000));
     }
