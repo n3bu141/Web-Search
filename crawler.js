@@ -67,12 +67,18 @@ async function search(start, numPages) {
         if (!visitedParent.has(parent(link))) {
             const robotslink = robots(start);
             let robotspage;
-            try { robotspage = await getPage(robotslink, true, false); } catch (error) { }
-            const disallowed = robotspage.split("User-agent: *")[1].split("Disallow");
-            for (let j = 0; j < disallowed.length; j++) {
-                if (disallowed[j].charAt(0) === ":") {
-                    noVisit.add(parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
+            let disallowed;
+            try { 
+                robotspage = await getPage(robotslink, true, false); 
+                disallowed = robotspage.split("User-agent: *")[1].split("Disallow"); 
+
+                for (let j = 0; j < disallowed.length; j++) {
+                    if (disallowed[j].charAt(0) === ":") {
+                        noVisit.add(parent(start) + disallowed[j].substring(3, disallowed[j].indexOf("\n")));
+                    }
                 }
+            } catch (error) { 
+
             }
 
             visitedParent.add(parent(link))
@@ -85,16 +91,17 @@ async function search(start, numPages) {
                 noVisit.add(link)
             }
         } catch (e) {
-            continue;
+
         }
 
+        console.log(noVisit)
+        console.log(links)
+        console.log(i)
         let tempLinks = await getLinks(data);
-        noVisit = links.addQueue(tempLinks, noVisit);
+        links.addQueue(tempLinks, noVisit);
 
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 2000));
     }
-
-    return;
 }
 
 class Queue {
@@ -117,16 +124,14 @@ class Queue {
         return item
     }
 
-    addQueue(queue, noVisit) {
+    addQueue(queue) {
         for (let i = queue.frontIndex; i < queue.backIndex; i++) {
             const temp = queue.remove()
 
-            if (!noVisit.has(temp) && temp !== undefined) {
+            if (temp !== undefined && !noVisit.has(temp)) {
                 this.add(temp);
             }
-            noVisit.add(temp);
         }
-        return noVisit;
     }
 
     peek() {
