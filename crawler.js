@@ -92,24 +92,29 @@ async function search(start, numPages) {
             visitedParent.add(parent(link))
         }
 
-        try {
-            if (!noVisit.has(link)) {
+
+        if (!noVisit.has(link)) {
+            try {
                 i++;
                 data = await getPage(link);
                 noVisit.add(link)
 
+                console.log(link)
                 // console.log(noVisit)
                 // console.log(links)
-                // console.log(i)
+                console.log(i)
                 let tempLinks = await getLinks(data, false, i == numPages || links.length == 0, link);
-                console.log(data)
                 links.addQueue(tempLinks, noVisit);
-            }
-        } catch (e) {
 
+                // console.log(tempLinks)
+            } catch (e) {
+                console.log(e)
+                i--;
+            }
         }
 
-        await new Promise(r => setTimeout(r, 2000));
+
+        await new Promise(r => setTimeout(r, 500));
     }
 }
 
@@ -133,7 +138,7 @@ class Queue {
         return item
     }
 
-    addQueue(queue) {
+    addQueue(queue, noVisit) {
         for (let i = queue.frontIndex; i < queue.backIndex; i++) {
             const temp = queue.remove()
 
