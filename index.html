@@ -33,6 +33,9 @@
         const results = document.getElementById('results');
 
         searchButton.addEventListener('click', async () => {
+            if(count.value == 0 || count.value == null){
+                count.value = 10
+            } 
             const url = `http://localhost:3001/search?key=key&s=${searchTerm.value}&count=${count.value}`;
 
             try {

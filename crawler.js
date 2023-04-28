@@ -8,7 +8,6 @@ const fs = require('fs');
 
 async function getPage(url) {
     const { data } = await axios.get(url);
-
     return data;
 }
 
@@ -43,7 +42,7 @@ async function getLinks(data, isRobot, isLast, url) {
     const $page = cheerio.load(data);
     const links = new Queue();
 
-    if ($page('meta[name="robots"]:not([content~="noindex"] [content~="nofollow"])').length > 0) {
+    if ($page('meta[name="robots"]:not([content~="noindex"] [content~="nofollow"])').length > 0 || $page('meta[name="robots"]') == 0) {
         $page('a[href^="https"]:not([rel~="nofollow"] [rel~="nofollow,"] [rel~="noindex"] [rel~="noindex,"])').each((i, elem) => {
             links.add(elem.attribs.href);
         })
