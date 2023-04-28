@@ -1,7 +1,7 @@
-const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = 3001;
 
@@ -29,22 +29,20 @@ app.get('/search', validateKey, async (req, res) => {
     const scores = [];
 
     await entries.forEach(async entry => {
-        const start = Date.now();
         const scoreReturn = await scoreHTML(entry["Contents"], s.toLowerCase());
         const score = scoreReturn[0];
         const title = scoreReturn[1]
         scores.push({ Title: title, URL: entry["URL"], Score: score });
-        const end = Date.now();
     });
 
     scores.sort((a, b) => b['Score'] - a['Score']);
     const topScores = scores.slice(0, count);
-    console.log(scores)
+    // console.log(scores)
 
     let ret = {"results": topScores.length, "keyword": s, "pages": topScores}
-
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(ret, null, 4));
+    console.log(ret)
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.json(ret);
 });
 
 app.get('/', (req, res) => {
@@ -54,6 +52,10 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
+
+app.use(cors({
+    origin: '*'
+}));
 
 async function scoreHTML(str, key) {
     const $ = cheerio.load(str);

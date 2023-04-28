@@ -4,11 +4,20 @@
 <head>
     <meta charset="utf-8">
     <title>Search Example</title>
-    <script>search.js</script>
 </head>
 
 <body>
-    <h1>Search Example</h1>
+    <style>
+        textarea {
+          border-style: none;
+          border-color: Transparent;
+          overflow: auto;
+          outline: none;
+          resize: none;
+          margin-top: 10px;
+        }
+    </style>
+    <h1>Search</h1>
     <div>
         <label for="searchTerm">Search Term :</label>
         <input type="text" id="searchTerm" name="searchTerm">
@@ -16,29 +25,21 @@
         <input type="number" id="count" name="count" value="">
         <button id="searchButton">Search</button>
     </div>
-    <div id="results"></div>
+    <textarea id="results" cols="250" rows="50" readonly></textarea>
     <script>
         const searchButton = document.getElementById('searchButton');
         const searchTerm = document.getElementById('searchTerm');
         const count = document.getElementById('count');
         const results = document.getElementById('results');
 
-        searchButton.addEventListener('click', () => {
+        searchButton.addEventListener('click', async () => {
             const url = `http://localhost:3001/search?key=key&s=${searchTerm.value}&count=${count.value}`;
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    results.innerHTML = '';
-                    data.forEach(entry => {
-                        const div = document.createElement('div');
-                        div.innerHTML = `${entry.URL} - ${entry.Date}`;
-                        results.appendChild(div);
-                    });
-                })
-                .catch(error => {
-                    results.innerHTML = `<p>Error: ${error.message}</p>`;
-                });
+            results.innerHTML = "<p>Fetching search results...</p>"
+            let data = await fetch(url)
+            let jsonData = await data.json();
+
+            results.innerHTML = JSON.stringify(jsonData, null, 4)
         });
     </script>
 </body>
