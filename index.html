@@ -35,7 +35,7 @@
         searchButton.addEventListener('click', async () => {
             const url = `http://localhost:3001/search?key=key&s=${searchTerm.value}&count=${count.value}`;
 
-            results.innerHTML = "<p>Fetching search results...</p>"
+            results.innerHTML = "Fetching search results..."
             let data = await fetch(url)
             let jsonData = await data.json();
 
