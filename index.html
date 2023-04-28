@@ -9,12 +9,12 @@
 <body>
     <style>
         textarea {
-          border-style: none;
-          border-color: Transparent;
-          overflow: auto;
-          outline: none;
-          resize: none;
-          margin-top: 10px;
+            border-style: none;
+            border-color: Transparent;
+            overflow: auto;
+            outline: none;
+            resize: none;
+            margin-top: 10px;
         }
     </style>
     <h1>Search</h1>
@@ -35,11 +35,15 @@
         searchButton.addEventListener('click', async () => {
             const url = `http://localhost:3001/search?key=key&s=${searchTerm.value}&count=${count.value}`;
 
-            results.innerHTML = "Fetching search results..."
-            let data = await fetch(url)
-            let jsonData = await data.json();
+            try {
+                results.innerHTML = "Fetching search results..."
+                let data = await fetch(url)
+                let jsonData = await data.json();
 
-            results.innerHTML = JSON.stringify(jsonData, null, 4)
+                results.innerHTML = JSON.stringify(jsonData, null, 4)
+            } catch {
+                results.innerHTML = "Search failed"
+            }
         });
     </script>
 </body>
