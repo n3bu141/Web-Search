@@ -113,7 +113,7 @@ async function search(start, numPages) {
         }
 
 
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 1000));
     }
 }
 

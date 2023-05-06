@@ -25,27 +25,38 @@
         <input type="number" id="count" name="count" value="">
         <button id="searchButton">Search</button>
     </div>
-    <textarea id="results" cols="250" rows="50" readonly></textarea>
+    <div id="results" style="margin-top: 10px;"></div>
     <script>
         const searchButton = document.getElementById('searchButton');
         const searchTerm = document.getElementById('searchTerm');
         const count = document.getElementById('count');
         const results = document.getElementById('results');
 
+        results.innerHTML = "";
+
         searchButton.addEventListener('click', async () => {
             if(count.value == 0 || count.value == null){
-                count.value = 10
+                count.value = 10;
             } 
             const url = `http://localhost:3001/search?key=key&s=${searchTerm.value}&count=${count.value}`;
 
             try {
-                results.innerHTML = "Fetching search results..."
-                let data = await fetch(url)
+                results.innerHTML = "Fetching search results...";
+                let data = await fetch(url);
                 let jsonData = await data.json();
 
-                results.innerHTML = JSON.stringify(jsonData, null, 4)
+                let page = "";
+                for(let i = 0; i < jsonData["results"]; i++){
+                    page += "<h3>" + jsonData["pages"][i]["Title"] + "</h3>\n";
+                    page += "<a href=\"" + jsonData["pages"][i]["URL"] + "\">" + jsonData["pages"][i]["URL"] + "</a>\n";
+                    page += "<p style=\"margin-bottom: 3em;\">Score: " +  + jsonData["pages"][i]["Score"] + "</p>\n";
+                }
+
+                // results.innerHTML = JSON.stringify(jsonData["pages"], null, 4);
+                console.log(1)
+                results.innerHTML = page;
             } catch {
-                results.innerHTML = "Search failed"
+                results.innerHTML = "Search failed";
             }
         });
     </script>
